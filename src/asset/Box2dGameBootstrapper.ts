@@ -19,6 +19,7 @@ export class Box2dGameBootstrapper extends Bootstrapper {
 
             .withChild(instantiater.buildGameObject("test_object")
                 .withComponent(CssSpriteRenderer)
-                .withComponent(Rotator));
+                .withComponent(Rotator))
+        ;
     }
 }
