@@ -7,7 +7,7 @@ import {
 import { Vector3 } from "three";
 import { Rotator } from "./script/Rotator";
 
-export class TestGameBootstrapper extends Bootstrapper {
+export class Box2dGameBootstrapper extends Bootstrapper {
     public run(): SceneBuilder {
         const instantiater = this.engine.instantiater;
         
