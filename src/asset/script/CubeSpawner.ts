@@ -26,6 +26,8 @@ export class CubeSpawner extends Component {
                     .withComponent(CssHtmlElementRenderer, c => {
                         const div = document.createElement("div");
                         div.style.backgroundColor = "red";
+                        div.innerText = "css is awesome";
+                        div.style.fontSize = "5px";
                         c.setElement(div);
                         c.elementWidth = 10;
                         c.elementHeight = 10;
