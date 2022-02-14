@@ -5,14 +5,7 @@ import DefaultSprite from "./asset/source/default_sprite.png";
 GlobalConfig.defaultSpriteSrc = DefaultSprite;
 
 function startTestGame(container: HTMLElement) {
-    const game = new Game(container, {
-        render: {
-            useCss3DRenderer: true
-        },
-        physics: {
-            usePhysics2D: false,
-        }
-    });
+    const game = new Game(container);
     game.run(Box2dGameBootstrapper);
     game.inputHandler.startHandleEvents();
 }
