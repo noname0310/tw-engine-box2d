@@ -8,14 +8,14 @@ export class CubeSpawner extends Component {
     private _physicsProcessor: PhysicsProcessor|null = null;
 
     public onEnable() {
-        this.engine.input.addOnKeyDownEventListener(this.onKeyDown);
+        this.engine.input.addOnKeyDownEventListener(this._onKeyDown);
     }
 
     public onDisable() {
-        this.engine.input.removeOnKeyDownEventListener(this.onKeyDown);
+        this.engine.input.removeOnKeyDownEventListener(this._onKeyDown);
     }
 
-    private onKeyDown = (event: KeyboardEvent) => {
+    private _onKeyDown = (event: KeyboardEvent) => {
         if (event.key === "Enter") {
             this.engine.scene.addChildFromBuilder(
                 this.engine.instantiater.buildGameObject(
