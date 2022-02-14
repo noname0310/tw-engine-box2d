@@ -1,8 +1,9 @@
-import { Component } from "the-world-engine";
+import { Component, ReadOnlyVector2, WritableVector2 } from "the-world-engine";
 import { PhysicsProcessor } from "./PhysicsProcessor";
 import * as b2 from "../../box2d.ts/build/index";
 import { PhysicsMaterial2D } from "./PhysicsMaterial2D";
 import { Collider2D } from "./collider/Collider2D";
+import { Vector2 } from "three";
 
 export enum RigidbodyType2D {
     Dynamic,
@@ -30,13 +31,15 @@ export class RigidBody2D extends Component {
     private _bodyType: b2.BodyType = b2.BodyType.b2_dynamicBody; // Body Type
     private _material: PhysicsMaterial2D|null = null; // Material
     private _simulated = true; // Simulated
-    // Use Auto Mass <-- idon know how implement this :/
+    // Use Auto Mass <-- idon know how implement this :/ https://stackoverflow.com/questions/14004179/box2d-set-mass-on-a-figure
     private _linearDrag = 0; // Linear Drag
     private _angularDrag = 0.05; // Angular Drag
     private _gravityScale = 1; // Gravity Scale
     private _collisionDetection: CollisionDetectionMode2D = CollisionDetectionMode2D.Discrete; // Collision Detection
     private _sleepMode: RigidbodySleepMode2D = RigidbodySleepMode2D.StartAwake; // Sleeping Mode
     private _freezeRotation = false; // Freeze Rotation
+
+    private _velocity = new Vector2();
 
     public awake() {
         const bodyDef = new b2.BodyDef();
@@ -61,6 +64,8 @@ export class RigidBody2D extends Component {
 
     public onDestroy() {
         this._physicsProcessor!.removeRigidBody(this._body!);
+        this._body = null;
+        this._material?.removeOnChangedEventListener(this._updateMaterialInfo);
     }
 
     public update() {
@@ -69,13 +74,22 @@ export class RigidBody2D extends Component {
         this.transform.eulerAngles.z = this._body!.GetAngle();
     }
     
+    /** @internal */
     public addFixture(fixture: b2.FixtureDef): b2.Fixture {
         return this._body!.CreateFixture(fixture);
     }
 
+    /** @internal */
     public removeFixture(fixture: b2.Fixture) {
         this._body!.DestroyFixture(fixture);
     }
+
+    private readonly _updateMaterialInfo = () => {
+        const colliderList = this.gameObject.getComponents(Collider2D);
+        for (let i = 0; i < colliderList.length; i++) {
+            colliderList[i].updateFixtureMaterialInfo();
+        }
+    };
 
     public set physicsProcessor(value: PhysicsProcessor) {
         this._physicsProcessor = value;
@@ -96,9 +110,10 @@ export class RigidBody2D extends Component {
     }
 
     public set material(value: PhysicsMaterial2D|null) {
+        this._material?.removeOnChangedEventListener(this._updateMaterialInfo);
         this._material = value;
-        const colliderList = this.gameObject.getComponents(Collider2D);
-        for (const collider of colliderList) collider.updateFixtureMaterialInfo();
+        this._updateMaterialInfo();
+        this._material?.addOnChangedEventListener(this._updateMaterialInfo);
     }
 
     public get material(): PhysicsMaterial2D|null {
@@ -140,5 +155,34 @@ export class RigidBody2D extends Component {
     public set freezeRotation(value: boolean) {
         this._freezeRotation = value;
         this._body?.SetFixedRotation(value);
+    }
+
+    public get velocity(): ReadOnlyVector2 {
+        if (this._body) {
+            const velocity = this._body.GetLinearVelocity();
+            this._velocity.set(velocity.x, velocity.y);
+        }
+        return this._velocity;
+    }
+
+    public set velocity(value: ReadOnlyVector2) {
+        (this._velocity as WritableVector2).copy(value);
+        if (this._body) {
+            this._body.SetLinearVelocity(value);
+        }
+    }
+
+    public get angularVelocity(): number {
+        return this._body?.GetAngularVelocity() ?? 0;
+    }
+
+    public set angularVelocity(value: number) {
+        if (this._body) {
+            this._body.SetAngularVelocity(value);
+        }
+    }
+
+    public get mass(): number {
+        return this._body?.GetMass() ?? 0;
     }
 }

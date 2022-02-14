@@ -12,19 +12,8 @@ export class BoxCollider2D extends Collider2D {
     private _debugDraw = true;
     private _debugObject: GameObject|null = null;
 
-    public override onDestroy(): void {
-        if (this._debugObject) {
-            this._debugObject.destroy();
-            this._debugObject = null;
-        }
-    }
-
-    protected override createShape(): b2.Shape {
-        const shape = new b2.PolygonShape();
-        shape.SetAsBox(
-            this._size.x / 2 * PhysicsProcessor.unitScalar,
-            this._size.y / 2 * PhysicsProcessor.unitScalar
-        );
+    public override onEnable(): void {
+        super.onEnable();
         if (this._debugDraw) {
             this._debugObject = this.gameObject.addChildFromBuilder(
                 this.engine.instantiater.buildGameObject("debug_box", new Vector3(this.offset.x, this.offset.y, 200))
@@ -38,11 +27,29 @@ export class BoxCollider2D extends Collider2D {
                     })
             );
         }
+    }
+
+    public override onDisable(): void {
+        super.onDisable();
+        if (this._debugObject) {
+            this._debugObject.destroy();
+            this._debugObject = null;
+        }
+    }
+
+    protected override createShape(): b2.Shape {
+        const shape = new b2.PolygonShape();
+        shape.SetAsBox(
+            this._size.x / 2 * PhysicsProcessor.unitScalar,
+            this._size.y / 2 * PhysicsProcessor.unitScalar,
+            this.offset
+        );
         return shape;
     }
 
     public set size(value: ReadOnlyVector2) {
         this._size.set(value.x, value.y);
+        this.updateFixture();
     }
 
     public get size(): ReadOnlyVector2 {
