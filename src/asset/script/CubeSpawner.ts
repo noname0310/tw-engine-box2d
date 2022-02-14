@@ -1,9 +1,8 @@
 import { Component, CssHtmlElementRenderer } from "the-world-engine";
 import { Vector2, Vector3 } from "three";
-import { b2BodyType } from "../../box2d.ts/build/box2d";
-import { BoxCollider2D } from "./BoxCollider2D";
+import { BoxCollider2D } from "./collider/BoxCollider2D";
 import { PhysicsProcessor } from "./PhysicsProcessor";
-import { RigidBody2D } from "./RigidBody2D";
+import { RigidbodyType2D, RigidBody2D } from "./RigidBody2D";
 
 export class CubeSpawner extends Component {
     private _physicsProcessor: PhysicsProcessor|null = null;
@@ -17,7 +16,7 @@ export class CubeSpawner extends Component {
     }
 
     private onKeyDown = (event: KeyboardEvent) => {
-        if (event.key === " ") {
+        if (event.key === "Enter") {
             this.engine.scene.addChildFromBuilder(
                 this.engine.instantiater.buildGameObject(
                     "cube",
@@ -34,10 +33,10 @@ export class CubeSpawner extends Component {
                     })
                     .withComponent(RigidBody2D, c => {
                         c.physicsProcessor = this._physicsProcessor!;
-                        c.bodyType = b2BodyType.b2_dynamicBody;
+                        c.bodyType = RigidbodyType2D.Dynamic;
                     })
                     .withComponent(BoxCollider2D, c => {
-                        c.boxScale = new Vector2(10, 10);
+                        c.size = new Vector2(10, 10);
                     })
             );
         }
