@@ -3,6 +3,7 @@ import {
     Camera,
     CssHtmlElementRenderer,
     CssSpriteRenderer,
+    EditorCameraController,
     EditorGridRenderer,
     GameObject,
     PlayerGridMovementController,
@@ -11,24 +12,19 @@ import {
     TrackCameraController
 } from "the-world-engine";
 import { Quaternion, Vector2, Vector3 } from "three";
-import { b2BodyType } from "../box2d.ts/build/box2d";
-import { BoxCollider2D } from "./script/BoxCollider2D";
+import { BoxCollider2D } from "./script/collider/BoxCollider2D";
 import { CubeSpawner } from "./script/CubeSpawner";
 import { PhysicsProcessor } from "./script/PhysicsProcessor";
-import { RigidBody2D } from "./script/RigidBody2D";
+import { RigidbodyType2D, RigidBody2D } from "./script/RigidBody2D";
 
 export class Box2dGameBootstrapper extends Bootstrapper {
     public run(): SceneBuilder {
         const instantiater = this.engine.instantiater;
-
-        const cursor = new PrefabRef<GameObject>();
+        
         const physics_processor = new PrefabRef<PhysicsProcessor>();
+        const cursor = new PrefabRef<GameObject>();
         
         return this.sceneBuilder
-
-            .withChild(instantiater.buildGameObject("physics_manager")
-                .withComponent(PhysicsProcessor)
-                .getComponent(PhysicsProcessor, physics_processor))
 
             .withChild(instantiater.buildGameObject("floor", new Vector3(0, -60, 0))
                 .withComponent(CssHtmlElementRenderer, c => {
@@ -40,16 +36,15 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 })
                 .withComponent(RigidBody2D, c => {
                     c.physicsProcessor = physics_processor.ref!;
-                    c.bodyType = b2BodyType.b2_staticBody;
+                    c.bodyType = RigidbodyType2D.Static;
                 })
                 .withComponent(BoxCollider2D, c => {
-                    c.boxScale = new Vector2(180, 5);
+                    c.size = new Vector2(180, 5);
                 }))
 
             .withChild(instantiater.buildGameObject("floor2",
-                new Vector3(130, 20, 0),
-                new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 3)
-            )
+                new Vector3(90, 20, 0),
+                new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2))
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
                     div.style.backgroundColor = "black";
@@ -59,16 +54,15 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 })
                 .withComponent(RigidBody2D, c => {
                     c.physicsProcessor = physics_processor.ref!;
-                    c.bodyType = b2BodyType.b2_staticBody;
+                    c.bodyType = RigidbodyType2D.Static;
                 })
                 .withComponent(BoxCollider2D, c => {
-                    c.boxScale = new Vector2(180, 5);
+                    c.size = new Vector2(180, 5);
                 }))
             
             .withChild(instantiater.buildGameObject("floor3",
-                new Vector3(-130, 20, 0),
-                new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 3)
-            )
+                new Vector3(-90, 20, 0),
+                new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -Math.PI / 2))
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
                     div.style.backgroundColor = "black";
@@ -78,10 +72,10 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 })
                 .withComponent(RigidBody2D, c => {
                     c.physicsProcessor = physics_processor.ref!;
-                    c.bodyType = b2BodyType.b2_staticBody;
+                    c.bodyType = RigidbodyType2D.Static;
                 })
                 .withComponent(BoxCollider2D, c => {
-                    c.boxScale = new Vector2(180, 5);
+                    c.size = new Vector2(180, 5);
                 }))
 
             .withChild(instantiater.buildGameObject("cube", new Vector3(0, 10, 0))
@@ -94,10 +88,10 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 })
                 .withComponent(RigidBody2D, c => {
                     c.physicsProcessor = physics_processor.ref!;
-                    c.bodyType = b2BodyType.b2_dynamicBody;
+                    c.bodyType = RigidbodyType2D.Dynamic;
                 })
                 .withComponent(BoxCollider2D, c => {
-                    c.boxScale = new Vector2(10, 10);
+                    c.size = new Vector2(10, 10);
                 }))
 
             .withChild(instantiater.buildGameObject("cursor")
@@ -113,12 +107,20 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                     c.viewSize = 200;
                 })
                 .withComponent(TrackCameraController, c => {
+                    c.enabled = false;
                     c.setTrackTarget(cursor.ref!);
                 })
+                .withComponent(EditorCameraController, c => {
+                    c.maxViewSize = 1000;
+                })
                 .withComponent(EditorGridRenderer, c => {
-                    c.renderHeight = 500;
-                    c.renderWidth = 500;
+                    c.renderHeight = 1000;
+                    c.renderWidth = 1000;
                 }))
+
+            .withChild(instantiater.buildGameObject("physics_manager")
+                .withComponent(PhysicsProcessor)
+                .getComponent(PhysicsProcessor, physics_processor))
         ;
     }
 }
