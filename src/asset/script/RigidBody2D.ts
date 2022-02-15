@@ -95,6 +95,18 @@ export class RigidBody2D extends Component {
         this._physicsProcessor = value;
     }
 
+    public get bodyType(): RigidbodyType2D {
+        switch (this._bodyType) {
+        case b2.BodyType.b2_staticBody:
+            return RigidbodyType2D.Static;
+        case b2.BodyType.b2_kinematicBody:
+            return RigidbodyType2D.Kinematic;
+        case b2.BodyType.b2_dynamicBody:
+            return RigidbodyType2D.Dynamic;
+        }
+        throw new Error("Unknown body type");
+    }
+
     public set bodyType(value: RigidbodyType2D) {
         switch (value) {
         case RigidbodyType2D.Dynamic:
@@ -109,6 +121,10 @@ export class RigidBody2D extends Component {
         }
     }
 
+    public get material(): PhysicsMaterial2D|null {
+        return this._material;
+    }
+
     public set material(value: PhysicsMaterial2D|null) {
         this._material?.removeOnChangedEventListener(this._updateMaterialInfo);
         this._material = value;
@@ -116,8 +132,8 @@ export class RigidBody2D extends Component {
         this._material?.addOnChangedEventListener(this._updateMaterialInfo);
     }
 
-    public get material(): PhysicsMaterial2D|null {
-        return this._material;
+    public get simulated(): boolean {
+        return this._simulated;
     }
 
     public set simulated(value: boolean) {
@@ -125,9 +141,17 @@ export class RigidBody2D extends Component {
         this._body?.SetEnabled(value);
     }
 
+    public get linearDrag(): number {
+        return this._linearDrag;
+    }
+
     public set linearDrag(value: number) {
         this._linearDrag = value;
         this._body?.SetLinearDamping(value);
+    }
+
+    public get angularDrag(): number {
+        return this._angularDrag;
     }
 
     public set angularDrag(value: number) {
@@ -135,9 +159,17 @@ export class RigidBody2D extends Component {
         this._body?.SetAngularDamping(value);
     }
 
+    public get gravityScale(): number {
+        return this._gravityScale;
+    }
+
     public set gravityScale(value: number) {
         this._gravityScale = value;
         this._body?.SetGravityScale(value);
+    }
+
+    public get collisionDetection(): CollisionDetectionMode2D {
+        return this._collisionDetection;
     }
 
     public set collisionDetection(value: CollisionDetectionMode2D) {
@@ -145,11 +177,19 @@ export class RigidBody2D extends Component {
         this._body?.SetBullet(value === CollisionDetectionMode2D.Continuous);
     }
 
+    public get sleepMode(): RigidbodySleepMode2D {
+        return this._sleepMode;
+    }
+
     public set sleepMode(value: RigidbodySleepMode2D) {
         this._sleepMode = value;
         this._body?.SetSleepingAllowed(value !== RigidbodySleepMode2D.NeverSleep);
         this._body?.SetAwake(value === RigidbodySleepMode2D.StartAwake ||
             value === RigidbodySleepMode2D.NeverSleep);
+    }
+
+    public get freezeRotation(): boolean {
+        return this._freezeRotation;
     }
 
     public set freezeRotation(value: boolean) {
