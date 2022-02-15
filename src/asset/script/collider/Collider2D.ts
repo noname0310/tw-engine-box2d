@@ -42,14 +42,14 @@ export class Collider2D extends Component {
         fixtureDef.restitution = physicsMaterial.bounciness;
         fixtureDef.isSensor = this._isTrigger;
         fixtureDef.shape = this.createShape();
-        this._fixture = rigidBody!.addFixture(fixtureDef);
+        this._fixture = rigidBody!.addFixture(fixtureDef, this);
         this._fixtureCreated = true;
     }
 
     private destroyFixture(): void {
         if (this._fixture) {
             if (!this._fixtureCreated) return;
-            this._rigidBody!.removeFixture(this._fixture);
+            this._rigidBody!.removeFixture(this._fixture, this);
             this._fixture = null;
             this._fixtureCreated = false;
         }

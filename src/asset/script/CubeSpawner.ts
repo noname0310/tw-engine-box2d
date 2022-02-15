@@ -35,7 +35,6 @@ export class CubeSpawner extends Component {
                         c.physicsProcessor = this._physicsProcessor!;
                         c.bodyType = RigidbodyType2D.Dynamic;
                         c.mass = 1;
-                        //c.inertia = 0;
                     })
                     .withComponent(BoxCollider2D, c => {
                         c.size = new Vector2(10, 10);

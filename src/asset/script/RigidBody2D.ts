@@ -40,10 +40,12 @@ export class RigidBody2D extends Component {
     private _sleepMode: RigidbodySleepMode2D = RigidbodySleepMode2D.StartAwake; // Sleeping Mode
     private _freezeRotation = false; // Freeze Rotation
 
-    private readonly _centerOfMass = new Vector2();
-    private readonly _worldCenterOfMass = new Vector2();
-    private _inertia = 1/6;
+    private readonly _centerOfMass = new Vector2(NaN, NaN);
+    private readonly _worldCenterOfMass = new Vector2(NaN, NaN);
+    private _inertia = NaN;
     private readonly _velocity = new Vector2();
+
+    private readonly _attachedColliders: Collider2D[] = [];
 
     public awake(): void {
         const bodyDef = new b2.BodyDef();
@@ -68,7 +70,16 @@ export class RigidBody2D extends Component {
         for (let i = 0; i < colliderList.length; i++) {
             colliderList[i].createFixture(this);
         }
-        this._body.SetMassData(this.createMassData());
+
+        if (isNaN(this._centerOfMass.x)) {
+            const centerOfMass = this._body.GetLocalCenter();
+            this._centerOfMass.set(centerOfMass.x, centerOfMass.y);
+        }
+        if (isNaN(this._inertia)) {
+            this._inertia = this._body.GetInertia();
+        }
+        
+        this.updateMassData();
     }
 
     public onDestroy(): void {
@@ -84,17 +95,29 @@ export class RigidBody2D extends Component {
     }
     
     /** @internal */
-    public addFixture(fixture: b2.FixtureDef): b2.Fixture {
-        return this._body!.CreateFixture(fixture);
+    public addFixture(fixtureDef: b2.FixtureDef, collider: Collider2D): b2.Fixture {
+        const fixture = this._body!.CreateFixture(fixtureDef);
+        this._attachedColliders.push(collider);
+
+        //update center of mass
+        const centerOfMass = this._body!.GetLocalCenter();
+        this._centerOfMass.set(centerOfMass.x, centerOfMass.y);
+
+
+        return fixture;
     }
 
     /** @internal */
-    public removeFixture(fixture: b2.Fixture) {
+    public removeFixture(fixture: b2.Fixture, collider: Collider2D): void {
+        const index = this._attachedColliders.findIndex(c => c.instanceId === collider.instanceId);
+        if (index >= 0) {
+            this._attachedColliders.splice(index, 1);
+        }
         this._body!.DestroyFixture(fixture);
     }
 
     private readonly _updateMaterialInfo = () => {
-        const colliderList = this.gameObject.getComponents(Collider2D);
+        const colliderList = this._attachedColliders;
         for (let i = 0; i < colliderList.length; i++) {
             colliderList[i].updateFixtureMaterialInfo();
         }
@@ -152,15 +175,14 @@ export class RigidBody2D extends Component {
 
     private readonly _massData: b2.MassData = new b2.MassData();
 
-    private createMassData(newCenterOfMass?: Vector2): b2.MassData {
+    private updateMassData(): void {
+        if (!this._body) return;
         const massData = this._massData;
-        if (this._body) this._body.GetMassData(massData);
+        this._body.GetMassData(massData);
         if (!this._useAutoMass) massData.mass = this._mass;
-        if (newCenterOfMass) {
-            massData.center.Copy(newCenterOfMass).SelfMul(PhysicsProcessor.unitScalar);
-        }
+        massData.center.Copy(this._centerOfMass).SelfMul(PhysicsProcessor.unitScalar);
         massData.I = this._inertia;
-        return massData;
+        this._body.SetMassData(massData);
     }
 
     public get useAutoMass(): boolean {
@@ -171,21 +193,22 @@ export class RigidBody2D extends Component {
         this._useAutoMass = value;
         if (this._body) {
             if (this._useAutoMass) this._mass = this._body.GetMass();
-            this._body.SetMassData(this.createMassData());
         }
+        this.updateMassData();
     }
 
     public get mass(): number {
-        if (this._body && this._useAutoMass) return this._body.GetMass();
+        if (this._useAutoMass) {
+            if (this._body) return this._body.GetMass();
+            throw new Error("Cannot get mass when body is not created");
+        }
         return this._mass;
     }
 
     public set mass(value: number) {
         if (this._useAutoMass) throw new Error("Cannot set mass when useAutoMass is true");
         this._mass = value;
-        if (this._body) {
-            this._body.SetMassData(this.createMassData());
-        }
+        this.updateMassData();
     }
 
     public get drag(): number {
@@ -245,24 +268,24 @@ export class RigidBody2D extends Component {
     }
 
     public get centerOfMass(): ReadOnlyVector2 {
-        if (this._body) {
-            const center = this._body.GetLocalCenter();
-            this._centerOfMass.set(center.x, center.y);
+        if (isNaN(this._centerOfMass.x)) {
+            throw new Error("Cannot get center of mass when body is not created");
         }
         return this._centerOfMass;
     }
 
     public set centerOfMass(value: ReadOnlyVector2) {
         (this._centerOfMass as WritableVector2).copy(value);
-        if (this._body) {
-            this._body.SetMassData(this.createMassData(this._centerOfMass));
-        }
+        this.updateMassData();
     }
 
     public get worldCenterOfMass(): ReadOnlyVector2 {
         if (this._body) {
             const center = this._body.GetWorldCenter();
             this._worldCenterOfMass.set(center.x, center.y);
+        }
+        if (isNaN(this._worldCenterOfMass.x)) {
+            throw new Error("Cannot get world center of mass when body is not created");
         }
         return this._worldCenterOfMass;
     }
@@ -273,9 +296,7 @@ export class RigidBody2D extends Component {
 
     public set inertia(value: number) {
         this._inertia = value;
-        if (this._body) {
-            this._body.SetMassData(this.createMassData());
-        }
+        this.updateMassData();
     }
 
     public get velocity(): ReadOnlyVector2 {
@@ -301,5 +322,9 @@ export class RigidBody2D extends Component {
         if (this._body) {
             this._body.SetAngularVelocity(value);
         }
+    }
+
+    public get attachedColliderCount(): number {
+        return this._attachedColliders.length;
     }
 }
