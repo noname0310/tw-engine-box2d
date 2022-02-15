@@ -1,4 +1,4 @@
-import { Component, ReadOnlyVector2 } from "the-world-engine";
+import { Component, ReadOnlyVector2, WritableVector2 } from "the-world-engine";
 import { RigidBody2D } from "../RigidBody2D";
 import { Vector2 } from "three";
 import { PhysicsMaterial2D } from "../PhysicsMaterial2D";
@@ -78,6 +78,10 @@ export class Collider2D extends Component {
         return new PhysicsMaterial2D();
     }
 
+    public get density(): number {
+        return this._density;
+    }
+
     public set density(value: number) {
         this._density = value;
         if (this._fixture) {
@@ -85,8 +89,8 @@ export class Collider2D extends Component {
         }
     }
 
-    public get density(): number {
-        return this._density;
+    public get material(): PhysicsMaterial2D|null {
+        return this._material;
     }
 
     public set material(value: PhysicsMaterial2D|null) {
@@ -96,8 +100,8 @@ export class Collider2D extends Component {
         this._material?.addOnChangedEventListener(this.updateFixtureMaterialInfo);
     }
 
-    public get material(): PhysicsMaterial2D|null {
-        return this._material;
+    public get isTrigger(): boolean {
+        return this._isTrigger;
     }
 
     public set isTrigger(value: boolean) {
@@ -107,12 +111,12 @@ export class Collider2D extends Component {
         }
     }
 
-    public set offset(value: ReadOnlyVector2) {
-        this._offset.set(value.x, value.y);
-        this.updateFixture();
-    }
-
     public get offset(): ReadOnlyVector2 {
         return this._offset;
+    }
+
+    public set offset(value: ReadOnlyVector2) {
+        (this._offset as WritableVector2).copy(value);
+        this.updateFixture();
     }
 }
