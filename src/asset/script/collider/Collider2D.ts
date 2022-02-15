@@ -14,37 +14,44 @@ export class Collider2D extends Component {
     private _isTrigger = false;
     private _offset: Vector2 = new Vector2();
 
-    public awake() {
+    private _fixtureCreated = false;
+
+    public awake(): void {
         this._rigidBody = this.gameObject.getComponent(RigidBody2D);
     }
 
-    public onEnable() {
+    public onEnable(): void {
         this.createFixture();
     }
 
-    public onDisable() {
+    public onDisable(): void {
         this.destroyFixture();
     }
 
-    public onDestroy() {   
+    public onDestroy(): void {   
         this._material?.removeOnChangedEventListener(this.updateFixtureMaterialInfo);
     }
 
-    private createFixture(): void {
-        const physicsMaterial = this.getPhysicsMaterial();
+    /** @internal */
+    public createFixture(rigidBody?: RigidBody2D): void {
+        if (this._fixtureCreated) return;
+        const physicsMaterial = this.getPhysicsMaterial(rigidBody || this._rigidBody!);
         const fixtureDef = new b2.FixtureDef();
         fixtureDef.density = this._density;
         fixtureDef.friction = physicsMaterial.friction;
         fixtureDef.restitution = physicsMaterial.bounciness;
         fixtureDef.isSensor = this._isTrigger;
         fixtureDef.shape = this.createShape();
-        this._fixture = this._rigidBody!.addFixture(fixtureDef);
+        this._fixture = rigidBody!.addFixture(fixtureDef);
+        this._fixtureCreated = true;
     }
 
     private destroyFixture(): void {
         if (this._fixture) {
+            if (!this._fixtureCreated) return;
             this._rigidBody!.removeFixture(this._fixture);
             this._fixture = null;
+            this._fixtureCreated = false;
         }
     }
 
@@ -59,7 +66,7 @@ export class Collider2D extends Component {
     /** @internal */
     public readonly updateFixtureMaterialInfo = () => {
         if (this._fixture) {
-            const material = this.getPhysicsMaterial();
+            const material = this.getPhysicsMaterial(this._rigidBody!);
             this._fixture.SetFriction(material.friction);
             this._fixture.SetRestitution(material.bounciness);
         }
@@ -69,10 +76,10 @@ export class Collider2D extends Component {
         throw new Error("You should not use Collider2D directly but one of its subclasses. e.g. BoxCollider2D");
     }
 
-    private getPhysicsMaterial(): PhysicsMaterial2D {
+    private getPhysicsMaterial(rigidBody: RigidBody2D): PhysicsMaterial2D {
         if (this._material) return this._material;
 
-        const rigidBodyMaterial = this._rigidBody!.material;
+        const rigidBodyMaterial = rigidBody.material;
         if (rigidBodyMaterial) return rigidBodyMaterial;
 
         return new PhysicsMaterial2D();
@@ -83,6 +90,9 @@ export class Collider2D extends Component {
     }
 
     public set density(value: number) {
+        if (this._rigidBody && !this._rigidBody.useAutoMass) {
+            throw new Error("You cannot change the density of a collider when the rigid body is not using auto mass.");
+        }
         this._density = value;
         if (this._fixture) {
             this._fixture.SetDensity(value);

@@ -7,11 +7,11 @@ import { RigidbodyType2D, RigidBody2D } from "./RigidBody2D";
 export class CubeSpawner extends Component {
     private _physicsProcessor: PhysicsProcessor|null = null;
 
-    public onEnable() {
+    public onEnable(): void {
         this.engine.input.addOnKeyDownEventListener(this._onKeyDown);
     }
 
-    public onDisable() {
+    public onDisable(): void {
         this.engine.input.removeOnKeyDownEventListener(this._onKeyDown);
     }
 
@@ -34,6 +34,8 @@ export class CubeSpawner extends Component {
                     .withComponent(RigidBody2D, c => {
                         c.physicsProcessor = this._physicsProcessor!;
                         c.bodyType = RigidbodyType2D.Dynamic;
+                        c.mass = 1;
+                        //c.inertia = 0;
                     })
                     .withComponent(BoxCollider2D, c => {
                         c.size = new Vector2(10, 10);

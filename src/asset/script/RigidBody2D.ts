@@ -31,7 +31,8 @@ export class RigidBody2D extends Component {
     private _bodyType: b2.BodyType = b2.BodyType.b2_dynamicBody; // Body Type
     private _material: PhysicsMaterial2D|null = null; // Material
     private _simulated = true; // Simulated
-    // Use Auto Mass <-- idon know how implement this :/ https://stackoverflow.com/questions/14004179/box2d-set-mass-on-a-figure
+    private _useAutoMass = false; // https://stackoverflow.com/questions/14004179/box2d-set-mass-on-a-figure
+    private _mass = 1; // Mass
     private _linearDrag = 0; // Linear Drag
     private _angularDrag = 0.05; // Angular Drag
     private _gravityScale = 1; // Gravity Scale
@@ -39,9 +40,12 @@ export class RigidBody2D extends Component {
     private _sleepMode: RigidbodySleepMode2D = RigidbodySleepMode2D.StartAwake; // Sleeping Mode
     private _freezeRotation = false; // Freeze Rotation
 
-    private _velocity = new Vector2();
+    private readonly _centerOfMass = new Vector2();
+    private readonly _worldCenterOfMass = new Vector2();
+    private _inertia = 1/6;
+    private readonly _velocity = new Vector2();
 
-    public awake() {
+    public awake(): void {
         const bodyDef = new b2.BodyDef();
         bodyDef.userData = this;
         bodyDef.type = this._bodyType;
@@ -60,15 +64,20 @@ export class RigidBody2D extends Component {
         );
         bodyDef.angle = this.transform.eulerAngles.z;
         this._body = this._physicsProcessor!.addRigidBody(bodyDef);
+        const colliderList = this.gameObject.getComponents(Collider2D);
+        for (let i = 0; i < colliderList.length; i++) {
+            colliderList[i].createFixture(this);
+        }
+        this._body.SetMassData(this.createMassData());
     }
 
-    public onDestroy() {
+    public onDestroy(): void {
         this._physicsProcessor!.removeRigidBody(this._body!);
         this._body = null;
         this._material?.removeOnChangedEventListener(this._updateMaterialInfo);
     }
 
-    public update() {
+    public update(): void {
         this.transform.position.x = this._body!.GetPosition().x / PhysicsProcessor.unitScalar;
         this.transform.position.y = this._body!.GetPosition().y / PhysicsProcessor.unitScalar;
         this.transform.eulerAngles.z = this._body!.GetAngle();
@@ -141,11 +150,49 @@ export class RigidBody2D extends Component {
         this._body?.SetEnabled(value);
     }
 
-    public get linearDrag(): number {
+    private readonly _massData: b2.MassData = new b2.MassData();
+
+    private createMassData(newCenterOfMass?: Vector2): b2.MassData {
+        const massData = this._massData;
+        if (this._body) this._body.GetMassData(massData);
+        if (!this._useAutoMass) massData.mass = this._mass;
+        if (newCenterOfMass) {
+            massData.center.Copy(newCenterOfMass).SelfMul(PhysicsProcessor.unitScalar);
+        }
+        massData.I = this._inertia;
+        return massData;
+    }
+
+    public get useAutoMass(): boolean {
+        return this._useAutoMass;
+    }
+
+    public set useAutoMass(value: boolean) {
+        this._useAutoMass = value;
+        if (this._body) {
+            if (this._useAutoMass) this._mass = this._body.GetMass();
+            this._body.SetMassData(this.createMassData());
+        }
+    }
+
+    public get mass(): number {
+        if (this._body && this._useAutoMass) return this._body.GetMass();
+        return this._mass;
+    }
+
+    public set mass(value: number) {
+        if (this._useAutoMass) throw new Error("Cannot set mass when useAutoMass is true");
+        this._mass = value;
+        if (this._body) {
+            this._body.SetMassData(this.createMassData());
+        }
+    }
+
+    public get drag(): number {
         return this._linearDrag;
     }
 
-    public set linearDrag(value: number) {
+    public set drag(value: number) {
         this._linearDrag = value;
         this._body?.SetLinearDamping(value);
     }
@@ -197,6 +244,40 @@ export class RigidBody2D extends Component {
         this._body?.SetFixedRotation(value);
     }
 
+    public get centerOfMass(): ReadOnlyVector2 {
+        if (this._body) {
+            const center = this._body.GetLocalCenter();
+            this._centerOfMass.set(center.x, center.y);
+        }
+        return this._centerOfMass;
+    }
+
+    public set centerOfMass(value: ReadOnlyVector2) {
+        (this._centerOfMass as WritableVector2).copy(value);
+        if (this._body) {
+            this._body.SetMassData(this.createMassData(this._centerOfMass));
+        }
+    }
+
+    public get worldCenterOfMass(): ReadOnlyVector2 {
+        if (this._body) {
+            const center = this._body.GetWorldCenter();
+            this._worldCenterOfMass.set(center.x, center.y);
+        }
+        return this._worldCenterOfMass;
+    }
+
+    public get inertia(): number {
+        return this._inertia;
+    }
+
+    public set inertia(value: number) {
+        this._inertia = value;
+        if (this._body) {
+            this._body.SetMassData(this.createMassData());
+        }
+    }
+
     public get velocity(): ReadOnlyVector2 {
         if (this._body) {
             const velocity = this._body.GetLinearVelocity();
@@ -220,9 +301,5 @@ export class RigidBody2D extends Component {
         if (this._body) {
             this._body.SetAngularVelocity(value);
         }
-    }
-
-    public get mass(): number {
-        return this._body?.GetMass() ?? 0;
     }
 }
