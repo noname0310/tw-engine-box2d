@@ -37,14 +37,20 @@ export class BoxCollider2D extends Collider2D {
         }
     }
 
+    private _b2Vector = new b2.Vec2();
+
     protected override createShape(): b2.Shape {
         const shape = new b2.PolygonShape();
         shape.SetAsBox(
             this._size.x / 2 * PhysicsProcessor.unitScalar,
             this._size.y / 2 * PhysicsProcessor.unitScalar,
-            this.offset
+            this._b2Vector.Copy(this.offset).SelfMul(PhysicsProcessor.unitScalar)
         );
         return shape;
+    }
+
+    public get size(): ReadOnlyVector2 {
+        return this._size;
     }
 
     public set size(value: ReadOnlyVector2) {
@@ -52,15 +58,11 @@ export class BoxCollider2D extends Collider2D {
         this.updateFixture();
     }
 
-    public get size(): ReadOnlyVector2 {
-        return this._size;
+    public get debugDraw(): boolean {
+        return this._debugDraw;
     }
 
     public set debugDraw(value: boolean) {
         this._debugDraw = value;
-    }
-
-    public get debugDraw(): boolean {
-        return this._debugDraw;
     }
 }
