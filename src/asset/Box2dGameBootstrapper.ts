@@ -13,7 +13,7 @@ import {
 } from "the-world-engine";
 import { Quaternion, Vector2, Vector3 } from "three";
 import { BoxCollider2D } from "./script/collider/BoxCollider2D";
-import { CubeSpawner } from "./script/CubeSpawner";
+import { CubeSpawner } from "./script/helper/CubeSpawner";
 import { PhysicsProcessor } from "./script/PhysicsProcessor";
 import { RigidbodyType2D, RigidBody2D } from "./script/RigidBody2D";
 
