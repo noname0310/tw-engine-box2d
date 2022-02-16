@@ -66,10 +66,9 @@ export class RigidBody2D extends Component {
         bodyDef.awake = this._sleepMode === RigidbodySleepMode2D.StartAwake || 
             this._sleepMode === RigidbodySleepMode2D.NeverSleep;
         bodyDef.fixedRotation = this._freezeRotation;
-        bodyDef.position.Set(
-            this.transform.position.x * PhysicsProcessor.unitScalar,
-            this.transform.position.y * PhysicsProcessor.unitScalar
-        );
+        bodyDef.position
+            .Set(this.transform.position.x, this.transform.position.y)
+            .SelfMul(PhysicsProcessor.unitScalar);
         bodyDef.angle = this.transform.eulerAngles.z;
         this._body = this._physicsProcessor!.addRigidBody(bodyDef);
         const colliderList = this.gameObject.getComponents(Collider2D);
@@ -288,7 +287,9 @@ export class RigidBody2D extends Component {
     public get worldCenterOfMass(): ReadOnlyVector2 {
         if (this._body) {
             const center = this._body.GetWorldCenter();
-            this._worldCenterOfMass.set(center.x, center.y);
+            this._worldCenterOfMass
+                .set(center.x, center.y)
+                .divideScalar(PhysicsProcessor.unitScalar);
         }
         if (isNaN(this._worldCenterOfMass.x)) {
             throw new Error("Cannot get world center of mass when body is not created");
@@ -354,11 +355,16 @@ export class RigidBody2D extends Component {
 
     public addForceAtPosition(force: ReadOnlyVector2, position: ReadOnlyVector2, mode: ForceMode2D = ForceMode2D.Force): void {
         if (this._body) {
+            const pos = this._vec2Buffer
+                .Copy(position)
+                .SelfMul(PhysicsProcessor.unitScalar);
             if (mode === ForceMode2D.Impulse) {
-                this._body.ApplyLinearImpulse(force, position, true);
+                this._body.ApplyLinearImpulse(force, pos, true);
             } else {
-                this._body.ApplyForce(force, position, true);
+                this._body.ApplyForce(force, pos, true);
             }
+        } else {
+            throw new Error("Cannot add force when body is not created");
         }
     }
 
@@ -384,6 +390,115 @@ export class RigidBody2D extends Component {
             }
         } else {
             throw new Error("Cannot add force when body is not created");
+        }
+    }
+
+    public getPoint(point: ReadOnlyVector2, out?: Vector2): Vector2 {
+        const buffer = out ?? new Vector2();
+        if (this._body) {
+            const pos = this._vec2Buffer
+                .Copy(point)
+                .SelfMul(PhysicsProcessor.unitScalar);
+            return this._body.GetLocalPoint(pos, buffer);
+        } else {
+            throw new Error("Cannot get point when body is not created");
+        }
+    }
+
+    public getPointVelocity(point: ReadOnlyVector2, out?: Vector2): Vector2 {
+        const buffer = out ?? new Vector2();
+        if (this._body) {
+            const pos = this._vec2Buffer
+                .Copy(point)
+                .SelfMul(PhysicsProcessor.unitScalar);
+            return this._body.GetLinearVelocityFromWorldPoint(pos, buffer);
+        } else {
+            throw new Error("Cannot get point velocity when body is not created");
+        }
+    }
+
+    public getRelativePoint(relativePoint: ReadOnlyVector2, out?: Vector2): Vector2 {
+        const buffer = out ?? new Vector2();
+        if (this._body) {
+            const pos = this._vec2Buffer
+                .Copy(relativePoint)
+                .SelfMul(PhysicsProcessor.unitScalar);
+            return this._body.GetWorldPoint(pos, buffer);
+        } else {
+            throw new Error("Cannot get relative point when body is not created");
+        }
+    }
+
+    public getRelativePointVelocity(relativePoint: ReadOnlyVector2, out?: Vector2): Vector2 {
+        const buffer = out ?? new Vector2();
+        if (this._body) {
+            const pos = this._vec2Buffer
+                .Copy(relativePoint)
+                .SelfMul(PhysicsProcessor.unitScalar);
+            return this._body.GetLinearVelocityFromWorldPoint(pos, buffer);
+        } else {
+            throw new Error("Cannot get relative point velocity when body is not created");
+        }
+    }
+
+    public getRelativeVector(relativeVector: ReadOnlyVector2, out?: Vector2): Vector2 {
+        const buffer = out ?? new Vector2();
+        if (this._body) {
+            return this._body.GetWorldVector(relativeVector, buffer);
+        } else {
+            throw new Error("Cannot get relative vector when body is not created");
+        }
+    }
+
+    public getVector(vector: ReadOnlyVector2, out?: Vector2): Vector2 {
+        const buffer = out ?? new Vector2();
+        if (this._body) {
+            return this._body.GetLocalVector(vector, buffer);
+        } else {
+            throw new Error("Cannot get vector when body is not created");
+        }
+    }
+
+    // Cast    All the Collider2D shapes attached to the Rigidbody2D are cast into the Scene starting at each Collider position ignoring the Colliders attached to the same Rigidbody2D.
+    // ClosestPoint    Returns a point on the perimeter of all enabled Colliders attached to this Rigidbody that is closest to the specified position.
+    // Distance    Calculates the minimum distance of this collider against all Collider2D attached to this Rigidbody2D.
+    // GetAttachedColliders    Returns all Collider2D that are attached to this Rigidbody2D.
+    // GetContacts    Retrieves all contact points for all of the Collider(s) attached to this Rigidbody.
+    // GetShapes    Gets all the PhysicsShape2D used by all Collider2D attached to the Rigidbody2D.
+    // IsTouching    Checks whether the collider is touching any of the collider(s) attached to this rigidbody or not.
+    // IsTouchingLayers    Checks whether any of the collider(s) attached to this rigidbody are touching any colliders on the specified layerMask or not.
+    // OverlapCollider    Get a list of all Colliders that overlap all Colliders attached to this Rigidbody2D.
+    // OverlapPoint    Check if any of the Rigidbody2D colliders overlap a point in space.
+    
+    public isSleeping(): boolean {
+        if (this._body) {
+            return !this._body.IsAwake();
+        } else {
+            throw new Error("Cannot check if body is sleeping when body is not created");
+        }
+    }
+
+    public sleep(): void {
+        if (this._body) {
+            this._body.SetAwake(false);
+        } else {
+            throw new Error("Cannot sleep when body is not created");
+        }
+    }
+
+    public isAwake(): boolean {
+        if (this._body) {
+            return this._body.IsAwake();
+        } else {
+            throw new Error("Cannot check if body is awake when body is not created");
+        }
+    }
+
+    public wakeUp(): void {
+        if (this._body) {
+            this._body.SetAwake(true);
+        } else {
+            throw new Error("Cannot wake up body when body is not created");
         }
     }
 }
