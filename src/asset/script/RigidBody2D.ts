@@ -22,6 +22,11 @@ export enum RigidbodySleepMode2D {
     StartAsleep
 }
 
+export enum ForceMode2D {
+    Force,
+    Impulse
+}
+
 export class RigidBody2D extends Component {
     public override readonly disallowMultipleComponent = true;
 
@@ -44,6 +49,7 @@ export class RigidBody2D extends Component {
     private readonly _worldCenterOfMass = new Vector2(NaN, NaN);
     private _inertia = NaN;
     private readonly _velocity = new Vector2();
+    //private _useFullKinematicContacts = false;
 
     private readonly _attachedColliders: Collider2D[] = [];
 
@@ -122,6 +128,18 @@ export class RigidBody2D extends Component {
             colliderList[i].updateFixtureMaterialInfo();
         }
     };
+    
+    private readonly _massData: b2.MassData = new b2.MassData();
+
+    private updateMassData(): void {
+        if (!this._body) return;
+        const massData = this._massData;
+        this._body.GetMassData(massData);
+        if (!this._useAutoMass) massData.mass = this._mass;
+        massData.center.Copy(this._centerOfMass).SelfMul(PhysicsProcessor.unitScalar);
+        massData.I = this._inertia;
+        this._body.SetMassData(massData);
+    }
 
     public set physicsProcessor(value: PhysicsProcessor) {
         this._physicsProcessor = value;
@@ -171,18 +189,6 @@ export class RigidBody2D extends Component {
     public set simulated(value: boolean) {
         this._simulated = value;
         this._body?.SetEnabled(value);
-    }
-
-    private readonly _massData: b2.MassData = new b2.MassData();
-
-    private updateMassData(): void {
-        if (!this._body) return;
-        const massData = this._massData;
-        this._body.GetMassData(massData);
-        if (!this._useAutoMass) massData.mass = this._mass;
-        massData.center.Copy(this._centerOfMass).SelfMul(PhysicsProcessor.unitScalar);
-        massData.I = this._inertia;
-        this._body.SetMassData(massData);
     }
 
     public get useAutoMass(): boolean {
@@ -311,6 +317,8 @@ export class RigidBody2D extends Component {
         (this._velocity as WritableVector2).copy(value);
         if (this._body) {
             this._body.SetLinearVelocity(value);
+        } else {
+            throw new Error("Cannot set velocity when body is not created");
         }
     }
 
@@ -321,10 +329,61 @@ export class RigidBody2D extends Component {
     public set angularVelocity(value: number) {
         if (this._body) {
             this._body.SetAngularVelocity(value);
+        } else {
+            throw new Error("Cannot set angular velocity when body is not created");
         }
     }
 
     public get attachedColliderCount(): number {
         return this._attachedColliders.length;
+    }
+
+    private readonly _vec2Buffer = new b2.Vec2();
+
+    public addForce(force: ReadOnlyVector2, mode: ForceMode2D = ForceMode2D.Force): void {
+        if (this._body) {
+            if (mode === ForceMode2D.Impulse) {
+                this._body.ApplyLinearImpulse(force, this._body.GetWorldCenter(), true);
+            } else {
+                this._body.ApplyForce(force, this._body.GetWorldCenter(), true);
+            }
+        } else {
+            throw new Error("Cannot add force when body is not created");
+        }
+    }
+
+    public addForceAtPosition(force: ReadOnlyVector2, position: ReadOnlyVector2, mode: ForceMode2D = ForceMode2D.Force): void {
+        if (this._body) {
+            if (mode === ForceMode2D.Impulse) {
+                this._body.ApplyLinearImpulse(force, position, true);
+            } else {
+                this._body.ApplyForce(force, position, true);
+            }
+        }
+    }
+
+    public addRelativeForce(relativeForce: ReadOnlyVector2, mode: ForceMode2D = ForceMode2D.Force): void {
+        if (this._body) {
+            const f = this._body.GetWorldVector(relativeForce, this._vec2Buffer);
+            if (mode === ForceMode2D.Impulse) {
+                this._body.ApplyLinearImpulse(f, this._body.GetWorldCenter(), true);
+            } else {
+                this._body.ApplyForce(f, this._body.GetWorldCenter(), true);
+            }
+        } else {
+            throw new Error("Cannot add force when body is not created");
+        }
+    }
+
+    public addTorque(torque: number, mode: ForceMode2D = ForceMode2D.Force): void {
+        if (this._body) {
+            if (mode === ForceMode2D.Impulse) {
+                this._body.ApplyAngularImpulse(torque, true);
+            } else {
+                this._body.ApplyTorque(torque, true);
+            }
+        } else {
+            throw new Error("Cannot add force when body is not created");
+        }
     }
 }
