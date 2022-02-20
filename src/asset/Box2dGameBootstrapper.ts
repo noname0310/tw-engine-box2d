@@ -30,7 +30,7 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
                     div.style.backgroundColor = "black";
-                    c.setElement(div);
+                    c.element = div;
                     c.elementWidth = 180;
                     c.elementHeight = 5;
                 })
@@ -48,7 +48,7 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
                     div.style.backgroundColor = "black";
-                    c.setElement(div);
+                    c.element = div;
                     c.elementWidth = 180;
                     c.elementHeight = 5;
                 })
@@ -66,7 +66,7 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
                     div.style.backgroundColor = "black";
-                    c.setElement(div);
+                    c.element = div;
                     c.elementWidth = 180;
                     c.elementHeight = 5;
                 })
@@ -82,7 +82,7 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
                     div.style.backgroundColor = "red";
-                    c.setElement(div);
+                    c.element = div;
                     c.elementWidth = 10;
                     c.elementHeight = 10;
                 })

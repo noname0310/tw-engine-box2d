@@ -30,7 +30,7 @@ export class CubeSpawner extends Component {
                         div.style.backgroundColor = "red";
                         div.innerText = "css is awesome";
                         div.style.fontSize = "5px";
-                        c.setElement(div);
+                        c.element = div;
                         c.elementWidth = 10;
                         c.elementHeight = 10;
                     })

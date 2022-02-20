@@ -21,7 +21,7 @@ export class BoxCollider2D extends Collider2D {
                         const div = document.createElement("div");
                         div.style.border = "1px solid rgba(255, 255, 0, 0.3)";
                         div.style.backgroundColor = "rgba(0, 0, 0, 0)";
-                        c.setElement(div);
+                        c.element = div;
                         c.elementHeight = this._size.y;
                         c.elementWidth = this._size.x;
                     })
