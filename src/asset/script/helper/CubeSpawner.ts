@@ -43,6 +43,8 @@ export class CubeSpawner extends Component {
                     })
                     .withComponent(BoxCollider2D, c => {
                         c.size = new Vector2(10, 10);
+                        //c.filter.categoryBits = 0x0001 << 1;
+                        c.filter.groupIndex = -10;
                     })
                     .withComponent(AddForceOnce, c => c.enabled = false)
                     .withComponent(AddTorqueOnce, c => c.enabled = false)

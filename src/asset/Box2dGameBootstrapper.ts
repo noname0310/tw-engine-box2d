@@ -14,8 +14,10 @@ import {
 import { Quaternion, Vector2, Vector3 } from "three";
 import { BoxCollider2D } from "./script/collider/BoxCollider2D";
 import { CubeSpawner } from "./script/helper/CubeSpawner";
+import { LayerMask } from "./script/LayerMask";
 import { PhysicsProcessor } from "./script/PhysicsProcessor";
 import { RigidbodyType2D, RigidBody2D } from "./script/RigidBody2D";
+import { TestLayer } from "./script/TestLayer";
 
 export class Box2dGameBootstrapper extends Bootstrapper {
     public run(): SceneBuilder {
@@ -23,6 +25,35 @@ export class Box2dGameBootstrapper extends Bootstrapper {
         
         const physics_processor = new PrefabRef<PhysicsProcessor>();
         const cursor = new PrefabRef<GameObject>();
+
+        // layer mask settings concept:
+
+        // this.setting.layer.set(
+        //     { "default", "player", "enemy", "projectile", "ground", "wall" },
+        //     {
+        //         "wall": { false, true, true, true, true, true },
+        //         "ground": { false, true, true, true, true },
+        //         "projectile": { false, true, true, true },
+        //         "enemy": { false, true, true },
+        //         "player": { false, true },
+        //         "default": { false }
+        //     }
+        // );
+
+        const layerMask = new LayerMask();
+
+        layerMask.setLayerCollisionMatrix<TestLayer>({
+            default: { default: false, player: false, enemy: false, projectile: false, ground: false, wall: false },
+            player: { default: false, player: false, enemy: false, projectile: false, ground: false },
+            enemy: { default: false, player: false, enemy: false, projectile: false },
+            projectile: { default: false, player: false, enemy: false },
+            ground: { default: false, player: false },
+            wall: { default: false }
+        });
+
+        const wallLayerMask = layerMask.getLayers<TestLayer>().wall;
+        
+        console.log(wallLayerMask);
         
         return this.sceneBuilder
 
@@ -92,6 +123,9 @@ export class Box2dGameBootstrapper extends Bootstrapper {
                 })
                 .withComponent(BoxCollider2D, c => {
                     c.size = new Vector2(10, 10);
+                    c.filter.categoryBits = 0x0001 << 1;
+                    c.filter.maskBits = 0x0001;
+                    c.filter.groupIndex = -10;
                 }))
 
             .withChild(instantiater.buildGameObject("cursor")
