@@ -8,6 +8,7 @@ import { AddTorqueOnce } from "./AddTorqueOnce";
 
 export class CubeSpawner extends Component {
     private _physicsProcessor: PhysicsProcessor|null = null;
+    private _idCounter = 0;
 
     public onEnable(): void {
         this.engine.input.addOnKeyDownEventListener(this._onKeyDown);
@@ -21,13 +22,13 @@ export class CubeSpawner extends Component {
         if (event.key === "Enter") {
             this.engine.scene.addChildFromBuilder(
                 this.engine.instantiater.buildGameObject(
-                    "cube",
+                    "cube" + this._idCounter++,
                     new Vector3(this.transform.position.x, this.transform.position.y, 0),
                     new Quaternion()//.setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 4)
                 )
                     .withComponent(CssHtmlElementRenderer, c => {
                         const div = document.createElement("div");
-                        div.style.backgroundColor = "red";
+                        div.style.backgroundColor = "#39C5BB";
                         div.innerText = "css is awesome";
                         div.style.fontSize = "5px";
                         c.element = div;

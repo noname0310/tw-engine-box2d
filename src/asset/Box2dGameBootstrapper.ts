@@ -81,7 +81,7 @@ export class Box2dGameBootstrapper extends Bootstrapper {
             .withChild(instantiater.buildGameObject("cube", new Vector3(0, 10, 0))
                 .withComponent(CssHtmlElementRenderer, c => {
                     const div = document.createElement("div");
-                    div.style.backgroundColor = "red";
+                    div.style.backgroundColor = "#39C5BB";
                     c.element = div;
                     c.elementWidth = 10;
                     c.elementHeight = 10;
