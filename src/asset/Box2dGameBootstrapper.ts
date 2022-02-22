@@ -14,7 +14,7 @@ import {
 import { Quaternion, Vector2, Vector3 } from "three";
 import { BoxCollider2D } from "./script/collider/BoxCollider2D";
 import { CubeSpawner } from "./script/helper/CubeSpawner";
-import { LayerMask } from "./script/LayerMask";
+import { LayerMaskFactory } from "./script/LayerMaskFactory";
 import { PhysicsProcessor } from "./script/PhysicsProcessor";
 import { RigidbodyType2D, RigidBody2D } from "./script/RigidBody2D";
 import { TestLayer } from "./script/TestLayer";
@@ -26,32 +26,21 @@ export class Box2dGameBootstrapper extends Bootstrapper {
         const physics_processor = new PrefabRef<PhysicsProcessor>();
         const cursor = new PrefabRef<GameObject>();
 
-        // layer mask settings concept:
+        const layerMask = new LayerMaskFactory(this.engine);
 
-        // this.setting.layer.set(
-        //     { "default", "player", "enemy", "projectile", "ground", "wall" },
-        //     {
-        //         "wall": { false, true, true, true, true, true },
-        //         "ground": { false, true, true, true, true },
-        //         "projectile": { false, true, true, true },
-        //         "enemy": { false, true, true },
-        //         "player": { false, true },
-        //         "default": { false }
-        //     }
-        // );
-
-        const layerMask = new LayerMask();
+        const o = true;
+        const x = false;
 
         layerMask.setLayerCollisionMatrix<TestLayer>({
-            default: { default: false, player: false, enemy: false, projectile: false, ground: false, wall: false },
-            player: { default: false, player: false, enemy: false, projectile: false, ground: false },
-            enemy: { default: false, player: false, enemy: false, projectile: false },
-            projectile: { default: false, player: false, enemy: false },
-            ground: { default: false, player: false },
-            wall: { default: false }
+            default:    { wall: o, ground: o, projectile: o, enemy: o, player: x, default: o },
+            player:     { wall: o, ground: o, projectile: o, enemy: o, player: o },
+            enemy:      { wall: o, ground: o, projectile: o, enemy: o },
+            projectile: { wall: o, ground: o, projectile: o },
+            ground:     { wall: o, ground: o },
+            wall:       { wall: o }
         });
 
-        const wallLayerMask = layerMask.getLayers<TestLayer>().wall;
+        const wallLayerMask = layerMask.nameToLayer<TestLayer>("wall");
         
         console.log(wallLayerMask);
         
