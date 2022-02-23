@@ -1309,7 +1309,13 @@ Console.WriteLine(builder.ToString());
         if (this._engineGlobalObject.gameState.kind !== GameStateKind.Initializing) {
             throw new Error("Cannot set collision matrix after initialization");
         }
-        const entries = Object.entries(collisionMatrix);
+        const entries = Object.entries(collisionMatrix) as [string, object][];
+
+        entries.sort((a, b) => { //sort for consistency
+            const aKey = Object.entries(a[1]).length;
+            const bKey = Object.entries(b[1]).length;
+            return bKey - aKey;
+        });
 
         // register layer
         this._strCategory.clear();
@@ -1325,7 +1331,7 @@ Console.WriteLine(builder.ToString());
 
         // set collision matrix
         for (let i = 0; i < entries.length; ++i) {
-            const item = entries[i] as [string, object];
+            const item = entries[i];
             const layerName = item[0];
             const layerEntries = Object.entries(item[1]);
             for (let j = 0; j < layerEntries.length; ++j) {
