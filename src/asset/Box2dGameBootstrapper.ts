@@ -39,10 +39,6 @@ export class Box2dGameBootstrapper extends Bootstrapper {
             ground:     { wall: o, ground: o },
             wall:       { wall: o }
         });
-
-        const wallLayerMask = layerMask.nameToLayer<TestLayer>("wall");
-        
-        console.log(wallLayerMask);
         
         return this.sceneBuilder
 
