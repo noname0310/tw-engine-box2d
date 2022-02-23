@@ -1,6 +1,6 @@
 import { EngineGlobalObject, GameStateKind } from "the-world-engine";
 
-type Layer<l extends number = 32, acc extends string[] = [string]> =
+type Layer<l extends number = 32, acc extends string[] = ["default"]> =
     acc["length"] extends l
         ? acc
         : acc | Layer<l, [...acc, string]>;
