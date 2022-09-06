@@ -5,10 +5,10 @@ type Layer<l extends number = 32, acc extends string[] = ["default"]> =
         ? acc
         : acc | Layer<l, [...acc, string]>;
 
-type LayerParm<T extends Layer, acc extends boolean[] = [], out extends string = never> =
+type LayerParm<T extends Layer, acc extends boolean[] = [], result extends string = never> =
     acc["length"] extends T["length"]
-        ? out
-        : out | LayerParm<T, [...acc, true], T[acc["length"]]>
+        ? result
+        : result | LayerParm<T, [...acc, true], T[acc["length"]]>
 
 export class LayerMaskFactory {
     private _engineGlobalObject: EngineGlobalObject;
